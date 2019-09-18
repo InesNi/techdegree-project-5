@@ -1,0 +1,35 @@
+{% macro render_field(field) %}
+    <div >
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="notification error">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+        {% if field.type != "CSRFTokenField" %}
+            {{ field.label }}
+        {% endif %}
+        {% if field.type == "DateField" %}
+            {{ field(type="date") }}
+        {% else %}
+        {{ field }}
+        {% endif %}
+        
+    </div>
+{% endmacro %}
+
+
+{% macro render_entry(entry) %}
+    <article>
+        <h2><a href="{{url_for('details', slug=entry.slug)}}">{{entry.title}}</a></h2>
+        <time datetime="{{entry.date.strftime('%Y-%m-%d')}}">{{entry.date.strftime('%B %d, %Y')}}</time>
+        <p>
+        {% with tags = entry.get_tags() %}
+        {% for tag in tags %}
+        <a href="{{url_for('entries_by_tag', tag=tag.tag)}}" class="button button-secondary">{{tag.tag}}</a>
+        {% endfor %}
+        {% endwith %}
+        </p>
+    </article>
+{% endmacro %}
+
+

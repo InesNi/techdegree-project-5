@@ -1,0 +1,6 @@
+Flask
+flask-WTF
+Peewee
+flask-Login
+flask-bcrypt
+WTForms

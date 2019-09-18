@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% from 'macros.html' import render_entry %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="entry-list">
+    {% for entry in entries %}
+        {{render_entry(entry)}}
+    {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% from 'macros.html' import render_field %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="entry-list single">
+    <article>
+        <h1>{{entry.title}}</h1>
+        <time datetime="{{entry.date.strftime('%Y-%m-%d')}}">{{entry.date.strftime('%B %d, %Y')}}</time>
+        <div class="entry">
+            <h3>Time Spent:</h3>
+            <p>{{entry.time_spent}}  Hours</p>
+        </div>
+        <div class="entry">
+            <h3>What I Learned:</h3>
+            <p>{{ entry.content }}</p>
+            
+        </div>
+        <div class="entry">
+            <h3>Resources to Remember:</h3>
+            {{ entry.resources|safe }}
+        </div>
+        <div class="entry">
+            <p>
+            {% with tags= entry.get_tags() %}
+            {% for tag in tags %}
+            <a href="{{url_for('entries_by_tag', tag=tag.tag)}}" class="button button-secondary">{{tag.tag}}</a>
+            {% endfor %}
+            {% endwith %}
+            </p>
+        </div>
+    </article>
+</div>
+</div>
+{% if entry.author == current_user %}
+<div class="edit">
+<p><a href="{{url_for('edit', slug=entry.slug)}}">Edit Entry</a></p>
+<p><a href="{{url_for('delete', slug=entry.slug)}}">Delete Entry</a></p>
+{% endif %}
+{% endblock %}                
