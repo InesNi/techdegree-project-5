@@ -3,6 +3,7 @@ from flask import (Flask, render_template, redirect,
 from flask_login import (login_user, logout_user, current_user,
                          login_required, LoginManager)
 from flask_bcrypt import check_password_hash
+import string
 
 import models
 import forms
@@ -139,8 +140,9 @@ def add():
         # creates or gets tags inputed in form and
         # creates their relationship with entry
         for item in form.tags.data.strip().split(','):
-            tag, created = models.Tag.get_or_create(tag=item)
-            models.EntryTags.create(tag=tag, entry=entry)
+            if item not in string.whitespace:
+                tag, created = models.Tag.get_or_create(tag=item)
+                models.EntryTags.create(tag=tag, entry=entry)
         flash("New entry successfully made", "success")
         return redirect(url_for('index'))
     return render_template('new.html', title="New Entry", form=form)
@@ -192,8 +194,9 @@ def edit(slug):
         # gets or creates tags given in update form and
         # creates relationship between them and entry if nonexistant
         for item in new_tags:
-            tag, created = models.Tag.get_or_create(tag=item)
-            models.EntryTags.get_or_create(tag=tag, entry=entry)
+            if item not in string.whitespace:
+                tag, created = models.Tag.get_or_create(tag=item)
+                models.EntryTags.get_or_create(tag=tag, entry=entry)
 
         flash("Entry successfully updated", "success")
         return redirect(url_for('index'))

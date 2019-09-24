@@ -30,7 +30,8 @@ class RegisterForm(FlaskForm):
         'Email', validators=[DataRequired(), Email(), email_exists]
         )
     password = PasswordField(
-        'Password', validators=[DataRequired(), EqualTo('pass2')]
+        'Password', validators=[DataRequired(),Length(min=8),
+        EqualTo('pass2')]
         )
     pass2 = PasswordField('Confirm Password', validators=[DataRequired()])
 
