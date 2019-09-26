@@ -39,6 +39,41 @@ def after_request(response):
     g.db.close()
     return response
 
+def del_relation(tag, entry):
+    """Deletes relationship(EntryTag) between Entry and Tag
+    and the given Tag instance if it is not connected to
+    any of the other Entries
+    """
+    models.EntryTags.get(
+        tag = tag, entry = entry
+    ).delete_instance()
+    if not tag.get_entries():
+        tag.delete_instance()
+
+
+def tags_from_string(str_tags, entry):
+    """Gets or creates tags given in string format and
+    creates relationship between them and entry if nonexistant
+    """
+    new_tags = str_tags.strip().split(',')
+    for item in new_tags:
+        if item not in string.whitespace:
+            tag, created = models.Tag.get_or_create(tag=item)
+            models.EntryTags.get_or_create(tag=tag, entry=entry)
+    return new_tags
+
+
+def update_from_form(entry, form):
+    """updates entry with data provided in form"""
+    for field,data in request.form.items():
+            if field == 'tags':
+                pass
+            else:
+                setattr(entry, field, data)
+    entry.slug=form.title.data.strip().lower().replace(' ', '-')
+    entry.author=g.user._get_current_object()
+    entry.save()
+
 
 # HOME PAGE
 
@@ -128,21 +163,16 @@ def add():
     form = forms.AddEntryForm()
     if form.validate_on_submit():
         # creates new entry with data inputed in form by user
-        entry = models.Entry.create(
-                title=form.title.data,
-                date=form.date.data,
-                time_spent=form.time_spent.data,
-                content=form.content.data,
-                resources=form.resources.data,
-                slug=form.title.data.strip().lower().replace(' ', '-'),
-                author=g.user._get_current_object()
-        )
+        try:
+            entry = models.Entry()
+            update_from_form(entry, form)
+        except models.IntegrityError:
+            flash("The entry with that title already exists", "error")
+            return redirect(url_for('add'))
+
         # creates or gets tags inputed in form and
         # creates their relationship with entry
-        for item in form.tags.data.strip().split(','):
-            if item not in string.whitespace:
-                tag, created = models.Tag.get_or_create(tag=item)
-                models.EntryTags.create(tag=tag, entry=entry)
+        tags_from_string(form.tags.data, entry)
         flash("New entry successfully made", "success")
         return redirect(url_for('index'))
     return render_template('new.html', title="New Entry", form=form)
@@ -156,7 +186,7 @@ def details(slug):
     Entry with matching slug attribute which it passes to
     template to be displayed
     """
-    entry = models.Entry.select().where(models.Entry.slug == slug).get()
+    entry = models.Entry.get(models.Entry.slug == slug)
     return render_template('detail.html',title=entry.title, entry=entry)
 
 
@@ -166,40 +196,20 @@ def details(slug):
 @login_required
 def edit(slug):
     """Edits the entry which slug attribute matches the argument passed in"""
-    entry = models.Entry.select().where(models.Entry.slug == slug).get()
+    entry = models.Entry.get(models.Entry.slug == slug)
     if entry.author != current_user:
         abort(403)
     form = forms.AddEntryForm()
     if form.validate_on_submit():
         # updates entry with data provided in form
-        models.Entry.update(
-            title=form.title.data,
-            date=form.date.data,
-            time_spent=form.time_spent.data,
-            content=form.content.data,
-            resources=form.resources.data,
-            slug=form.title.data.strip().lower().replace(' ', '-')
-        ).where(models.Entry.id == entry.id).execute()
-        new_tags = form.tags.data.split(',')
-        # deletes existing Tag if it is removed in update data
-        # and is not connected to any of the other Entries,
-        # and deletes relationship(EntryTag) between Entry and removed Tag
+        update_from_form(entry, form)
+        new_tags = tags_from_string(form.tags.data, entry)
         for tag in entry.get_tags():
             if tag.tag not in new_tags:
-                if len(models.EntryTags.select().where(tag == tag.tag)) == 1:
-                    tag.delete_instance()
-                models.EntryTags.delete().where(
-                    tag == tag, entry == entry
-                    ).execute()
-        # gets or creates tags given in update form and
-        # creates relationship between them and entry if nonexistant
-        for item in new_tags:
-            if item not in string.whitespace:
-                tag, created = models.Tag.get_or_create(tag=item)
-                models.EntryTags.get_or_create(tag=tag, entry=entry)
-
+                del_relation(tag, entry)
         flash("Entry successfully updated", "success")
         return redirect(url_for('index'))
+
     # populates the form with existing data when displaying the page
     elif request.method == 'GET':
         form.title.data = entry.title
@@ -218,9 +228,11 @@ def edit(slug):
 @login_required
 def delete(slug):
     """Deletes chosen entry"""
-    entry = models.Entry.select().where(models.Entry.slug == slug).get()
+    entry = models.Entry.get(models.Entry.slug == slug)
     if entry.author != current_user:
         abort(403)
+    for tag in entry.get_tags():
+        del_relation(tag, entry)
     entry.delete_instance()
     return redirect(url_for('index'))
 

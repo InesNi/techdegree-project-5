@@ -9,7 +9,7 @@
             {{ field.label }}
         {% endif %}
         {% if field.type == "DateField" %}
-            {{ field(type="date") }}
+            {{ field(type="date", placeholder="yyyy-mm-dd") }}
         {% else %}
         {{ field }}
         {% endif %}

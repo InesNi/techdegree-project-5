@@ -4,7 +4,7 @@ from peewee import *
 from datetime import date
 
 
-DATABASE = SqliteDatabase('journal.db')
+DATABASE = SqliteDatabase('journal.db', pragmas={'foreign_keys': 1})
 
 
 class User(UserMixin, Model):
@@ -64,6 +64,9 @@ class Tag(Model):
                 EntryTags.tag == self
             )
         )
+    
+    def __str__(self):
+        return str(self.tag)
 
 
 class EntryTags(Model):

@@ -17,11 +17,6 @@ def name_exists(form, field):
         raise ValidationError('User with that username already exists.')
 
 
-def title_exists(form, field):
-    if Entry.select().where(Entry.title == field.data).exists():
-        raise ValidationError('Entry with that title already exists.')
-
-
 class RegisterForm(FlaskForm):
     username = StringField(
         'Username', validators=[DataRequired(), name_exists]
